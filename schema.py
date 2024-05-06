@@ -1,14 +1,18 @@
-from typing import List, Any, Dict
+from typing import Any, Dict, List
+
 from pydantic import BaseModel, validator
+
 
 class GeoLocation(BaseModel):
     type: str
     coordinates: List[float]
 
+
 class GeoJSONFeature(BaseModel):
     type: str
     properties: Dict[str, Any]
     geometry: GeoLocation
+
 
 class CapitalCreate(BaseModel):
     country: str
@@ -22,7 +26,8 @@ class CapitalCreate(BaseModel):
         if value.geometry.type != "Point":
             raise ValueError("geometry must have type 'Point'")
         return value
-    
+
+
 class CapitalPatch(BaseModel):
     city: str
     geo_location: GeoJSONFeature

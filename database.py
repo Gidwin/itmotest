@@ -8,10 +8,7 @@ class Base(DeclarativeBase):
     pass
 
 
-DATABASE_URL = (
-    f"postgresql+asyncpg://"
-    f"postgres:postgres@geodb:5432/postgres"
-)
+DATABASE_URL = f"postgresql+asyncpg://" f"postgres:postgres@geodb:5432/postgres"
 
 
 engine = create_async_engine(DATABASE_URL)
