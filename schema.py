@@ -7,35 +7,43 @@ class GeoLocation(BaseModel):
     type: str
     coordinates: List[float]
 
+    @validator("type")
+    def check_geojson(cls, value):
+        if value != "Point":
+            raise ValueError("geometry must have type 'Point'")
+        return value
 
 class GeoJSONFeature(BaseModel):
     type: str
     properties: Dict[str, Any]
     geometry: GeoLocation
 
-
-class CapitalCreate(BaseModel):
-    country: str
-    city: str
-    geo_location: GeoJSONFeature
-
-    @validator("geo_location")
+    @validator("type")
     def check_geojson(cls, value):
-        if value.type != "Feature":
-            raise ValueError("geo_location must have type 'Feature'")
-        if value.geometry.type != "Point":
-            raise ValueError("geometry must have type 'Point'")
+        if value != "Feature":
+            raise ValueError("geolocation must have type 'Feature'")
         return value
 
 
-class CapitalPatch(BaseModel):
-    city: str
-    geo_location: GeoJSONFeature
+# class CapitalCreate(BaseModel):
+#     geo_location: GeoJSONFeature
 
-    @validator("geo_location")
-    def check_geojson(cls, value):
-        if value.type != "Feature":
-            raise ValueError("geo_location must have type 'Feature'")
-        if value.geometry.type != "Point":
-            raise ValueError("geometry must have type 'Point'")
-        return value
+#     @validator("geo_location")
+#     def check_geojson(cls, value):
+#         if value.type != "Feature":
+#             raise ValueError("geo_location must have type 'Feature'")
+#         if value.geometry.type != "Point":
+#             raise ValueError("geometry must have type 'Point'")
+#         return value
+
+
+# class CapitalPatch(BaseModel):
+#     geo_location: GeoJSONFeature
+
+#     @validator("geo_location")
+#     def check_geojson(cls, value):
+#         if value.type != "Feature":
+#             raise ValueError("geo_location must have type 'Feature'")
+#         if value.geometry.type != "Point":
+#             raise ValueError("geometry must have type 'Point'")
+#         return value

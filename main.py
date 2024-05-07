@@ -8,15 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from database import get_async_session
 from models import Capital
-from schema import CapitalCreate, CapitalPatch
+from schema import GeoJSONFeature
 from services import is_city_table_empty
 
 app = FastAPI()
-
-
-@app.get("/")
-async def root():
-    return {"message": "Hello World"}
 
 
 @app.get("/load-data")
@@ -47,7 +42,8 @@ async def get_capitals(db_session: AsyncSession = Depends(get_async_session)):
     for capital in capitals:
         geojson_capital = {
             "type": "Feature",
-            "properties": {},
+            "properties": {"country": capital.country,
+                           "city": capital.city},
             "geometry": mapping(to_shape(capital.geo_location)),
         }
         geojson_capitals.append(geojson_capital)
@@ -58,25 +54,28 @@ async def get_capitals(db_session: AsyncSession = Depends(get_async_session)):
 async def get_capitals(
     capital_id: int, db_session: AsyncSession = Depends(get_async_session)
 ):
-    capital_query = select(Capital.geo_location).where(Capital.id == capital_id)
+    capital_query = select(Capital).where(Capital.id == capital_id)
     capital = await db_session.execute(capital_query)
-    geo_location = capital.scalar()
+    data = capital.scalar()
     geojson_capital = {
         "type": "Feature",
-        "properties": {},
-        "geometry": mapping(to_shape(geo_location)),
+        "properties": {"country": data.country,
+                       "city": data.city},
+        "geometry": mapping(to_shape(data.geo_location)),
     }
     return geojson_capital
 
 
 @app.post("/capitals", status_code=201)
 async def create_capital(
-    capital_data: CapitalCreate, db_session: AsyncSession = Depends(get_async_session)
+    capital_data: GeoJSONFeature, db_session: AsyncSession = Depends(get_async_session)
 ):
-    coordinates = capital_data.geo_location.geometry.coordinates
+    coordinates = capital_data.geometry.coordinates
+    country = capital_data.properties['country']
+    city = capital_data.properties['city']
     new_capital = Capital(
-        country=capital_data.country,
-        city=capital_data.city,
+        country=country,
+        city=city,
         geo_location=f"POINT({coordinates[0]} {coordinates[1]})",
     )
     db_session.add(new_capital)
@@ -87,13 +86,13 @@ async def create_capital(
 @app.patch("/capitals/{capital_id}", status_code=200)
 async def update_capital(
     capital_id: int,
-    capital_data: CapitalPatch,
+    capital_data: GeoJSONFeature,
     db_session: AsyncSession = Depends(get_async_session),
 ):
     capital = await db_session.get(Capital, capital_id)
     if capital:
-        coordinates = capital_data.geo_location.geometry.coordinates
-        capital.city = capital_data.city
+        coordinates = capital_data.geometry.coordinates
+        capital.city = capital_data.properties['city']
         capital.geo_location = f"POINT({coordinates[0]} {coordinates[1]})"
         await db_session.commit()
         return {"message": "change complite"}
